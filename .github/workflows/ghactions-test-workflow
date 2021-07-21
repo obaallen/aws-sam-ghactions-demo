@@ -71,7 +71,7 @@ jobs:
           API=`aws cloudformation describe-stacks --stack-name aws-sam-cli-ghactions-demo-test \
                 --query 'Stacks[0].Outputs[?OutputKey==`HelloWorldApi`].OutputValue' \
                 --output text`
-          curl $API
+          curl curl -f -LI $API
           
       - name: Delete test app
         working-directory: ./repo
