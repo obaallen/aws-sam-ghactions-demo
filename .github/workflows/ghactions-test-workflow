@@ -1,0 +1,79 @@
+  
+name: SAM sample application continuous integration workflow
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  samappdeploy:
+    name: Build and Test App
+    runs-on: ubuntu-latest
+    outputs:
+      env-name: ${{ steps.env-name.outputs.environment }}
+
+    steps:
+      - name: Create folders
+        run: |
+          mkdir sam
+          mkdir repo
+          
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: ./repo
+          
+      - name: Configure AWS credentials
+        id: creds
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          
+      - name: Configure environment name
+        id: env-name
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          ENVIRONMENT=`echo $REPO"-"test | tr "/" "-"`
+          echo "Environment name: $ENVIRONMENT"
+          echo "::set-output name=environment::$ENVIRONMENT"
+          
+      - name: Install SAM CLI
+        working-directory: ./sam
+        run: |
+          pwd
+          curl -OL https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-linux-x86_64.zip
+          ls -latr
+          unzip aws-sam-cli-linux-x86_64.zip -d sam-installation
+          sudo ./sam-installation/install
+          sam --version
+          
+      - name: Build the app
+        working-directory: ./repo
+        run: |
+          sam build --use-container
+
+      - name: Test Local invocation
+        working-directory: ./repo
+        run: |
+          sam local invoke HelloWorldFunction --event events/event.json
+
+      - name: Deploy test app
+        working-directory: ./repo
+        run: |
+          sam deploy --stack-name aws-sam-cli-ghactions-demo-test --no-confirm-changeset
+          
+      - name: Test deployed Lambda
+        working-directory: ./repo
+        run: |
+          API=`aws cloudformation describe-stacks --stack-name aws-sam-cli-ghactions-demo-test \
+                --query 'Stacks[0].Outputs[?OutputKey==`HelloWorldApi`].OutputValue' \
+                --output text`
+          curl $API
+          
+      - name: Delete test app
+        working-directory: ./repo
+        run: |
+          aws cloudformation delete-stack --stack-name aws-sam-cli-ghactions-demo-test
