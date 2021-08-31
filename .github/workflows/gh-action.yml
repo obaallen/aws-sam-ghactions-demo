@@ -51,7 +51,7 @@ jobs:
       - name: Deploy to Dev Account
         working-directory: ./repo
         run: |
-          sam deploy --no-confirm-changeset
+          sam deploy --config-env dev --no-confirm-changeset
 
   DeploytoProd:
     needs: [Build, DeploytoDev]
@@ -75,4 +75,4 @@ jobs:
       - name: Deploy the Prod if dev deployment succeeds
         working-directory: ./repo
         run: |
-          sam deploy --no-confirm-changeset
+          sam deploy --config-env prod --no-confirm-changeset
