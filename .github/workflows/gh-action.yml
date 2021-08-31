@@ -41,6 +41,7 @@ jobs:
           sam local invoke HelloWorldFunction --event events/event.json
           
   DeploytoDev:
+    needs: [Build]
     name: Deploy stack to AWS Dev Account
     runs-on: ubuntu-latest
     outputs:
@@ -62,6 +63,7 @@ jobs:
 
 
   DeploytoProd:
+    needs: [Build, DeploytoDev]
     name: Deploy stack to AWS Prod Account
     runs-on: ubuntu-latest
     outputs:
