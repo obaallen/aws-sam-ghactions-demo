@@ -5,8 +5,8 @@ on:
     branches: [ main ]
 
 jobs:
-  samappdeploy:
-    name: Deploy stack to AWS
+  Build:
+    name: Build Sam App
     runs-on: ubuntu-latest
     outputs:
       env-name: ${{ steps.env-name.outputs.environment }}
@@ -20,14 +20,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: ./repo
-
-      - name: Configure AWS credentials
-        id: creds
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Configure environment name
         id: env-name
@@ -47,8 +39,44 @@ jobs:
         working-directory: ./repo
         run: |
           sam local invoke HelloWorldFunction --event events/event.json
+          
+  DeploytoDev:
+    name: Deploy stack to AWS Dev Account
+    runs-on: ubuntu-latest
+    outputs:
+      env-name: ${{ steps.env-name.outputs.environment }}
 
-      - name: Deploy the app
+    steps:
+      - name: Configure AWS credentials
+        id: creds
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to Dev Account
+        working-directory: ./repo
+        run: |
+          sam deploy --no-confirm-changeset
+
+
+  DeploytoProd:
+    name: Deploy stack to AWS Prod Account
+    runs-on: ubuntu-latest
+    outputs:
+      env-name: ${{ steps.env-name.outputs.environment }}
+
+    steps:
+      - name: Configure AWS credentials
+        id: creds
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          
+      - name: Deploy the Prod if dev deployment succeeds
         working-directory: ./repo
         run: |
           sam deploy --no-confirm-changeset
