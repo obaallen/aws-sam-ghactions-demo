@@ -1,9 +1,17 @@
 version = 0.1
 [default]
 [default.deploy]
-[default.deploy.parameters]
+[dev.deploy.parameters]
 stack_name = "aws-sam-ghactions-demo"
-s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-3h3xa8pnyc74"
+s3_bucket = "aws-sam-dev-ghactions"
+s3_prefix = "aws-sam-ghactions-demo"
+region = "us-east-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+
+[prod.deploy.parameters]
+stack_name = "aws-sam-ghactions-demo"
+s3_bucket = "aws-sam-prod-ghactions"
 s3_prefix = "aws-sam-ghactions-demo"
 region = "us-east-2"
 confirm_changeset = true
