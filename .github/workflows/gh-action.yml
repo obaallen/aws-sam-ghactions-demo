@@ -40,6 +40,14 @@ jobs:
         run: |
           sam local invoke HelloWorldFunction --event events/event.json
           
+  DeploytoDev:
+    needs: [Build]
+    name: Deploy stack to AWS Dev Account
+    runs-on: ubuntu-latest
+    outputs:
+      env-name: ${{ steps.env-name.outputs.environment }}
+
+    steps:
       - name: Configure AWS credentials
         id: dev_creds
         uses: aws-actions/configure-aws-credentials@v1
@@ -52,18 +60,15 @@ jobs:
         working-directory: ./repo
         run: |
           sam deploy --no-confirm-changeset
-          echo ::set-output name=exit_code::$?
-          
-      - name: Test deployed Lambda
-        id: test
-        working-directory: ./repo
-        run: |
-          API=`aws cloudformation describe-stacks --stack-name aws-sam-cli-ghactions-demo-test \
-                --query 'Stacks[0].Outputs[?OutputKey==`HelloWorldApi`].OutputValue' \
-                --output text`
-          curl -f -LI $API
-          echo ::set-output name=exit_code::$?
-          
+
+  DeploytoProd:
+    needs: [Build, DeploytoDev]
+    name: Deploy stack to AWS Prod Account
+    runs-on: ubuntu-latest
+    outputs:
+      env-name: ${{ steps.env-name.outputs.environment }}
+
+    steps:
       - name: Configure AWS credentials
         if: steps.test.outputs.exit_code == 0
         id: creds
