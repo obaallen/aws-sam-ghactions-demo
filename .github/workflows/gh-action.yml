@@ -3,6 +3,8 @@ name: SAM sample application
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   Build:
@@ -57,7 +59,7 @@ jobs:
     needs: [Build, DeploytoDev]
     name: Deploy stack to AWS Prod Account
     runs-on: ubuntu-latest
-
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
